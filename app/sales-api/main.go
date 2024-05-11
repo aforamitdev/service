@@ -62,7 +62,9 @@ func run(log *log.Logger) error {
 	fmt.Print(parse)
 
 	expvar.NewString("build").Set(build)
+
 	log.Printf("main: started : Application initializing : version %q", build)
+
 	defer log.Println("main: Completed")
 
 	out, err := conf.String(&cfg)
@@ -70,12 +72,13 @@ func run(log *log.Logger) error {
 	if err != nil {
 		return errors.Wrap(err, "generating config for output")
 	}
+
 	log.Printf("main: config:\n %v\n", out)
 
 	log.Println("main: Initializing debugging support ")
 
 	go func() {
-		log.Printf("main:: debug listening %s", cfg.Web.DebugHost)
+		log.Printf("main: debug listening %s", cfg.Web.DebugHost)
 		if err := http.ListenAndServe(cfg.Web.DebugHost, http.DefaultServeMux); err != nil {
 			log.Printf("main: debug listener closed :%v", err)
 		}

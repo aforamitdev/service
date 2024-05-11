@@ -46,8 +46,8 @@ func (a *App) SignalShutdown() {
 
 func (a *App) Handle(method string, path string, handler Handler, mw ...Middleware) {
 
-	handler = wrapMiddleware(mw, handler)
-	handler = wrapMiddleware(a.mw, handler)
+	handler = wrapMiddleware(mw, handler, "handler")
+	handler = wrapMiddleware(a.mw, handler, "web")
 
 	h := func(w http.ResponseWriter, r *http.Request) {
 
