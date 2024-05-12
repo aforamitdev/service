@@ -25,7 +25,7 @@ func main() {
 	log := log.New(os.Stdout, "SALES : ", log.LstdFlags|log.Lmicroseconds|log.Lshortfile)
 	err := run(log)
 	if err != nil {
-		fmt.Printf("error running app ")
+		log.Printf("error running app ")
 	}
 
 }

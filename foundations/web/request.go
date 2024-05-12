@@ -14,7 +14,7 @@ import (
 	en_translations "gopkg.in/go-playground/validator.v9/translations/en"
 )
 
-var validate *validator.Validate
+var validate = validator.New()
 
 var translator *ut.UniversalTranslator
 
@@ -52,7 +52,9 @@ func Decode(r *http.Request, val interface{}) error {
 	}
 
 	if err := validate.Struct(val); err != nil {
+
 		verrors, ok := err.(validator.ValidationErrors)
+
 		if !ok {
 			return err
 		}
