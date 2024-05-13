@@ -2,15 +2,19 @@ package main
 
 import (
 	"context"
+	"crypto/rsa"
 	"expvar"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/signal"
 	"service2/app/sales-api/handlers"
+	"service2/business/auth"
 	"syscall"
 	"time"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/pkg/errors"
 
 	"net/http"
@@ -40,6 +44,11 @@ func run(log *log.Logger) error {
 			ReadTimeout     time.Duration `conf:"default:5s"`
 			WriteTimeOut    time.Duration `conf:"default:5s"`
 			ShutdownTimeout time.Duration `conf:"default:5s"`
+		}
+		Auth struct {
+			KeyID          string `conf:"default:3f433e9a-1bbc-4925-98f8-f4e119cd6bce"`
+			PrivateKeyFile string `conf:"default:/home/amit/go/src/github.com/service2/private.pem"`
+			Algorithm      string `conf:"default:RS256"`
 		}
 	}
 	cfg.Version.Build = build
@@ -75,6 +84,33 @@ func run(log *log.Logger) error {
 
 	log.Printf("main: config:\n %v\n", out)
 
+	// auth initializtions
+
+	privatePEM, err := ioutil.ReadFile(cfg.Auth.PrivateKeyFile)
+
+	if err != nil {
+		return errors.Wrap(err, "reading auth private key")
+	}
+
+	privateKey, err := jwt.ParseRSAPrivateKeyFromPEM(privatePEM)
+	if err != nil {
+		return errors.Wrap(err, "parsing auth private key")
+	}
+
+	lookup := func(kid string) (*rsa.PublicKey, error) {
+		switch kid {
+		case cfg.Auth.KeyID:
+			return &privateKey.PublicKey, nil
+		}
+		return nil, fmt.Errorf("no public key found for the specific kid: %s", kid)
+	}
+
+	auth, err := auth.New(cfg.Auth.Algorithm, lookup, auth.Keys{cfg.Auth.KeyID: privateKey})
+
+	if err != nil {
+		return errors.Wrap(err, "constructing auth")
+	}
+
 	log.Println("main: Initializing debugging support ")
 
 	go func() {
@@ -93,7 +129,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(build, shutdown, log),
+		Handler:      handlers.API(build, shutdown, log, auth),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeOut,
 	}

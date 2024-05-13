@@ -15,7 +15,8 @@ import (
 )
 
 func main() {
-	// keyGen()
+	// keyGen()\
+	fmt.Println("test")
 	tokenGen()
 }
 
@@ -89,7 +90,7 @@ func tokenGen() error {
 
 	method := jwt.GetSigningMethod("RS256")
 	tkn := jwt.NewWithClaims(method, claims)
-
+	tkn.Header["kid"] = "3f433e9a-1bbc-4925-98f8-f4e119cd6bce"
 	srt, err := tkn.SignedString(privateKey)
 
 	if err != nil {
