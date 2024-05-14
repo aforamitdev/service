@@ -23,7 +23,6 @@ func Logger(log *log.Logger) web.Middleware {
 
 			err := handlers(ctx, w, r)
 			// why log is not loging err
-			log.Println(err, "ERORORORORORORORROROROROOROR")
 
 			log.Printf("%s : ended   : %s %s -> %s (%d) (%s)", v.TractID, r.Method, r.URL.Path, r.RemoteAddr, v.StatusCode, time.Since(v.Now))
 

@@ -1,0 +1,37 @@
+FROM golang:1.21.6 as build_sales-api
+
+ENV CGO_ENABLED 0
+
+ARG VCS_REF
+
+RUN mkdir -p /service
+
+
+WORKDIR /service
+
+WORKDIR /service
+COPY . .
+
+WORKDIR /service/app/sales-api
+
+RUN go build -ldflags "-X main.build=${VCS_REF}"
+
+
+
+# Run the Go Binary in Alpine.
+FROM alpine:3.14
+ARG BUILD_DATE
+ARG BUILD_REF
+
+COPY --from=build_sales-api /service/private.pem /service/private.pem
+COPY --from=build_sales-api /service/app/sales-api/sales-api /service/sales-api
+
+WORKDIR /service
+CMD ["./sales-api"]
+
+LABEL org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.title="sales-api" \
+      org.opencontainers.image.authors="William Kennedy <bill@ardanlabs.com>" \
+      org.opencontainers.image.source="https://github.com/ardanlabs/service/app/sales-api" \
+      org.opencontainers.image.revision="${BUILD_REF}" \
+      org.opencontainers.image.vendor="Ardan Labs"

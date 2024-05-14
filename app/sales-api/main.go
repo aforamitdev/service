@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"service2/app/sales-api/handlers"
 	"service2/business/auth"
+	"service2/foundations/database"
 	"syscall"
 	"time"
 
@@ -50,6 +51,13 @@ func run(log *log.Logger) error {
 			PrivateKeyFile string `conf:"default:/home/amit/go/src/github.com/service2/private.pem"`
 			Algorithm      string `conf:"default:RS256"`
 		}
+		DB struct {
+			User       string `conf:"default:admin"`
+			Password   string `conf:"default:admin,noprint"`
+			Host       string `conf:"default:127.0.0.0:5432"`
+			Name       string `conf:"default:postgres"`
+			DisableTLS bool   `conf:"default:true"`
+		}
 	}
 	cfg.Version.Build = build
 	// cfg.Version.SVN = "12"
@@ -84,7 +92,7 @@ func run(log *log.Logger) error {
 
 	log.Printf("main: config:\n %v\n", out)
 
-	// auth initializtions
+	// auth initializations
 
 	privatePEM, err := ioutil.ReadFile(cfg.Auth.PrivateKeyFile)
 
@@ -120,6 +128,17 @@ func run(log *log.Logger) error {
 		}
 	}()
 
+	db, err := database.Open(database.Config{User: cfg.DB.User, Password: cfg.DB.Password, Host: cfg.DB.Host, Name: cfg.DB.Name, DisableTLS: cfg.DB.DisableTLS})
+
+	if err != nil {
+		return errors.Wrap(err, "connect to db ")
+	}
+
+	defer func() {
+		log.Printf("main:database stopped : %s", cfg.DB.Host)
+		db.Close()
+	}()
+
 	// select {}
 
 	log.Println("main: initializing API Support")
@@ -129,7 +148,7 @@ func run(log *log.Logger) error {
 
 	api := http.Server{
 		Addr:         cfg.Web.APIHost,
-		Handler:      handlers.API(build, shutdown, log, auth),
+		Handler:      handlers.API(build, shutdown, log, auth, db),
 		ReadTimeout:  cfg.Web.ReadTimeout,
 		WriteTimeout: cfg.Web.WriteTimeOut,
 	}
