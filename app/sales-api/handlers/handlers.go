@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"service2/business/auth"
+	"service2/business/data/user"
 	"service2/business/mid"
 	"service2/foundations/web"
 
@@ -21,6 +22,13 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, auth *auth.Auth
 	}
 
 	app.Handle(http.MethodGet, "/", check.readiness)
+
+	ug := userGroup{
+		user: user.New(log, db),
+		auth: auth,
+	}
+
+	app.Handle(http.MethodGet, "/v1/users", ug.query)
 
 	return app
 }

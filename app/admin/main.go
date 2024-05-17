@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"service2/business/data/schema"
+	"service2/foundations/database"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -16,10 +18,37 @@ import (
 
 func main() {
 	// keyGen()\
-	fmt.Println("test")
-	tokenGen()
+	// fmt.Println("test")
+	// tokenGen()
+	migrate()
 }
 
+func migrate() {
+
+	dbConfig := database.Config{
+		User:       "admin",
+		Name:       "postgres",
+		Host:       "127.0.0.0:5432",
+		Password:   "admin",
+		DisableTLS: true,
+	}
+	db, err := database.Open(dbConfig)
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+	if err := schema.Migrate(db); err != nil {
+		log.Fatalln(err)
+	}
+
+	fmt.Println("migration complet")
+
+	if err := schema.Seed(db); err != nil {
+		log.Fatalln(err)
+	}
+
+}
 func keyGen() error {
 	privateKey, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
