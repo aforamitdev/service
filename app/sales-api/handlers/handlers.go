@@ -29,6 +29,7 @@ func API(build string, shutdown chan os.Signal, log *log.Logger, auth *auth.Auth
 	}
 
 	app.Handle(http.MethodGet, "/v1/users", ug.query)
-
+	app.Handle(http.MethodGet, "/v1/users/:id", ug.queryById, mid.Authenticate(auth))
+	app.Handle(http.MethodPost, "/v1/users/", ug.create)
 	return app
 }
